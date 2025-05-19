@@ -5,7 +5,7 @@ const ImageBorderEffect = () => {
   const [image, setImage] = useState(null);
   const [borderColors, setBorderColors] = useState(['#88A7FD', '#EFB646', '#749469']);
   const [gutterSize, setGutterSize] = useState(8);
-  const [borderWidth, setBorderWidth] = useState(14);
+  const [borderWidth, setBorderWidth] = useState(6);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   
@@ -52,7 +52,7 @@ const ImageBorderEffect = () => {
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
     
-    // Clear canvas with white background
+    // For display purposes, fill with white (this won't affect the transparency of the output)
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
@@ -146,13 +146,43 @@ const ImageBorderEffect = () => {
     setBorderColors(newColors);
   };
 
-  // Download the result
+  // Download the result with transparency
   const downloadImage = () => {
     if (!canvasRef.current) return;
     
+    // Create a temporary canvas for the transparent version
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = canvasRef.current.width;
+    tempCanvas.height = canvasRef.current.height;
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Get the image data from the original canvas
+    const imageData = canvasRef.current.getContext('2d').getImageData(
+      0, 0, canvasRef.current.width, canvasRef.current.height
+    );
+    
+    // Clear the temp canvas (transparent by default)
+    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Draw the image data to the temp canvas
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Create white-to-transparent conversion
+    const data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      // If pixel is white (255,255,255), make it transparent
+      if (data[i] === 255 && data[i+1] === 255 && data[i+2] === 255) {
+        data[i+3] = 0; // Set alpha channel to 0 (transparent)
+      }
+    }
+    
+    // Put the modified image data back
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Download the transparent version
     const link = document.createElement('a');
     link.download = 'bordered-image.png';
-    link.href = canvasRef.current.toDataURL('image/png');
+    link.href = tempCanvas.toDataURL('image/png');
     link.click();
   };
 

@@ -190,64 +190,66 @@ const ImageBorderEffect = () => {
     const y = (canvas.height - scaledHeight) / 2;
     
     // Draw borders first (behind the image)
-    // Each border is a line segment positioned with offset from the edges
+    // Each border is offset from the center (following the reference image)
     for (let i = 0; i < 3; i++) {
-      const offset = i * (baseBorderWidth + baseGutterSize);
+      // Different offsets for each border to create the staggered frame effect
+      let offsetX, offsetY, borderWidth, borderHeight;
       
-      // Calculate border displacement using animation progress
-      // More subtle effect - masks through the width of each border
-      const animationOffset = animationProgress * canvasSize.width * 0.3;
-      
-      ctx.strokeStyle = borderColors[i];
-      ctx.lineWidth = baseBorderWidth;
-      ctx.lineCap = 'butt';
-      
-      // Draw the border segments with displacement
-      // Each border has a different offset position
-      
-      // Top border (extends right)
-      ctx.beginPath();
-      ctx.moveTo(x - offset - baseBorderWidth/2, y - offset - baseBorderWidth/2);
-      const topWidth = Math.min(
-        (scaledWidth + (offset + baseBorderWidth/2) * 2) * (animationProgress + 0.2),
-        scaledWidth + (offset + baseBorderWidth/2) * 2
-      );
-      ctx.lineTo(x - offset - baseBorderWidth/2 + topWidth, y - offset - baseBorderWidth/2);
-      ctx.stroke();
-      
-      // Right border (extends down)
-      const rightX = x + scaledWidth + offset + baseBorderWidth/2;
-      ctx.beginPath();
-      ctx.moveTo(rightX, y - offset - baseBorderWidth/2);
-      const rightHeight = Math.min(
-        (scaledHeight + (offset + baseBorderWidth/2) * 2) * (animationProgress + 0.1),
-        scaledHeight + (offset + baseBorderWidth/2) * 2
-      );
-      ctx.lineTo(rightX, y - offset - baseBorderWidth/2 + rightHeight);
-      ctx.stroke();
-      
-      // Bottom border (extends left)
-      const bottomY = y + scaledHeight + offset + baseBorderWidth/2;
-      ctx.beginPath();
-      ctx.moveTo(x + scaledWidth + offset + baseBorderWidth/2, bottomY);
-      const bottomWidth = Math.min(
-        (scaledWidth + (offset + baseBorderWidth/2) * 2) * (animationProgress),
-        scaledWidth + (offset + baseBorderWidth/2) * 2
-      );
-      ctx.lineTo(x + scaledWidth + offset + baseBorderWidth/2 - bottomWidth, bottomY);
-      ctx.stroke();
-      
-      // Left border (extends up)
-      ctx.beginPath();
-      ctx.moveTo(x - offset - baseBorderWidth/2, y + scaledHeight + offset + baseBorderWidth/2);
-      const leftHeight = Math.min(
-        (scaledHeight + (offset + baseBorderWidth/2) * 2) * (animationProgress - 0.1),
-        scaledHeight + (offset + baseBorderWidth/2) * 2
-      );
-      if (leftHeight > 0) {
-        ctx.lineTo(x - offset - baseBorderWidth/2, y + scaledHeight + offset + baseBorderWidth/2 - leftHeight);
+      // Calculate offsets based on border index
+      switch(i) {
+        case 0: // First border (centered)
+          offsetX = x - baseBorderWidth - baseGutterSize;
+          offsetY = y - baseBorderWidth - baseGutterSize;
+          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 2;
+          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 2;
+          break;
+        case 1: // Second border (shifted right and up)
+          offsetX = x;
+          offsetY = y - baseBorderWidth * 2 - baseGutterSize * 2;
+          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 2;
+          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 3;
+          break;
+        case 2: // Third border (shifted left and down)
+          offsetX = x - baseBorderWidth * 3 - baseGutterSize * 3;
+          offsetY = y;
+          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 4;
+          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 2;
+          break;
       }
-      ctx.stroke();
+      
+      // Calculate animation progress for this border
+      // Stagger the animations so they don't all appear at once
+      const borderProgress = Math.max(0, Math.min(1, animationProgress * 2.5 - (i * 0.3)));
+      
+      // Only draw if this border has started animating
+      if (borderProgress > 0) {
+        ctx.strokeStyle = borderColors[i];
+        ctx.lineWidth = baseBorderWidth;
+        
+        // Set up clipping region for masking effect
+        ctx.save();
+        
+        // Create a mask that grows outward from the center as a square
+        const maskSize = borderProgress * Math.max(canvas.width, canvas.height);
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Create a square clipping mask from the center
+        ctx.beginPath();
+        ctx.rect(
+          centerX - maskSize, 
+          centerY - maskSize, 
+          maskSize * 2, 
+          maskSize * 2
+        );
+        ctx.clip();
+        
+        // Draw the rectangle border
+        ctx.strokeRect(offsetX, offsetY, borderWidth, borderHeight);
+        
+        // Restore context
+        ctx.restore();
+      }
     }
     
     // Draw the image on top
@@ -262,16 +264,11 @@ const ImageBorderEffect = () => {
     const totalFrames = 60; // More frames for smoother animation
     
     for (let i = 0; i < totalFrames; i++) {
-      // Animation progresses from 0 to 1 with easing
+      // Animation progresses from 0 to 1
       const progress = i / totalFrames;
       
-      // Use easing function for smoother animation
-      // Starts slow, accelerates in the middle, ends slow
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : -1 + (4 - 2 * progress) * progress;
-      
-      const frame = drawAnimationFrame(eased);
+      // Create frame
+      const frame = drawAnimationFrame(progress);
       frames.push(frame);
     }
     

@@ -158,14 +158,15 @@ const ImageBorderEffect = () => {
   };
   
   // Create a single frame for the animation
-  const drawAnimationFrame = (offsetMultiplier) => {
+  const drawAnimationFrame = (animationProgress) => {
     const canvas = document.createElement('canvas');
     canvas.width = canvasSize.width;
     canvas.height = canvasSize.height;
     const ctx = canvas.getContext('2d');
     
-    // Clear canvas with transparent background
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear canvas with white background (will be transparent in export)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     if (!image) return canvas;
     
@@ -191,21 +192,44 @@ const ImageBorderEffect = () => {
     // Draw the image
     ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
     
-    // Draw animated border rectangles
+    // Maximum scale for the borders to stay within canvas
+    const maxAnimWidth = Math.min(canvas.width - x, scaledWidth);
+    const maxAnimHeight = Math.min(canvas.height - y, scaledHeight);
+    
+    // Calculate animation scale (0 to 1)
+    const animScale = animationProgress; // 0 to 1
+    
+    // Draw animated border rectangles - starting from inside and expanding outward
     for (let i = 0; i < 3; i++) {
-      // Apply the animation offset
-      const animOffset = offsetMultiplier * (i + 1) * 5;
-      const offset = i * (baseBorderWidth + baseGutterSize) + animOffset;
+      // Calculate progressive scale for each border
+      // First border expands fastest, third border slowest
+      const borderScale = Math.max(0, Math.min(1, (animScale * 4) - i));
+      
+      // Calculate expanding size
+      const expandWidth = scaledWidth * borderScale;
+      const expandHeight = scaledHeight * borderScale;
+      
+      // Calculate base offset for this border (with gutters)
+      const baseOffset = i * (baseBorderWidth + baseGutterSize);
+      
+      // Position and size for this border
+      const borderX = x - baseOffset - (expandWidth - scaledWidth) / 2;
+      const borderY = y - baseOffset - (expandHeight - scaledHeight) / 2;
+      const borderWidth = scaledWidth + expandWidth;
+      const borderHeight = scaledHeight + expandHeight;
       
       ctx.strokeStyle = borderColors[i];
       ctx.lineWidth = baseBorderWidth;
       
-      ctx.strokeRect(
-        x - offset - baseBorderWidth/2,
-        y - offset - baseBorderWidth/2,
-        scaledWidth + (offset + baseBorderWidth/2) * 2,
-        scaledHeight + (offset + baseBorderWidth/2) * 2
-      );
+      // Only draw if border is starting to appear
+      if (borderScale > 0) {
+        ctx.strokeRect(
+          borderX,
+          borderY,
+          borderWidth,
+          borderHeight
+        );
+      }
     }
     
     return canvas;
@@ -214,12 +238,16 @@ const ImageBorderEffect = () => {
   // Generate all animation frames
   const generateAnimationFrames = () => {
     const frames = [];
-    const totalFrames = 30; // Number of frames in the animation
+    const totalFrames = 40; // Number of frames in the animation
     
     for (let i = 0; i < totalFrames; i++) {
-      // Use a sine wave for smooth animation that starts and ends at 0
-      const offsetMultiplier = Math.sin((i / totalFrames) * Math.PI) * 10;
-      const frame = drawAnimationFrame(offsetMultiplier);
+      // Make animation progress from 0 to 1, then reverse back to 0
+      // This creates a nice expand and contract effect
+      const progress = i < totalFrames / 2 
+        ? i / (totalFrames / 2) 
+        : 2 - (i / (totalFrames / 2));
+      
+      const frame = drawAnimationFrame(progress);
       frames.push(frame);
     }
     

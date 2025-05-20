@@ -218,13 +218,13 @@ const ImageBorderEffect = () => {
     ];
     
     // Draw borders first (behind the image)
-    // Draw from outside to inside so inner borders overlay outer ones
-    for (let i = 2; i >= 0; i--) {
+    // Draw from inside to outside
+    for (let i = 0; i < 3; i++) {
       const config = borderConfigs[i];
       
       // Calculate animation progress for this border
-      // Stagger the animations so they don't all appear at once
-      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * (2-i))));
+      // Inner border appears first, then middle, then outer
+      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * i)));
       
       // Only draw if this border has started animating
       if (borderProgress > 0) {

@@ -189,48 +189,69 @@ const ImageBorderEffect = () => {
     const x = (canvas.width - scaledWidth) / 2;
     const y = (canvas.height - scaledHeight) / 2;
     
-    // Draw the image
-    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
-    
-    // Maximum scale for the borders to stay within canvas
-    const maxAnimWidth = Math.min(canvas.width - x, scaledWidth);
-    const maxAnimHeight = Math.min(canvas.height - y, scaledHeight);
-    
-    // Calculate animation scale (0 to 1)
-    const animScale = animationProgress; // 0 to 1
-    
-    // Draw animated border rectangles - starting from inside and expanding outward
+    // Draw borders first (behind the image)
+    // Each border is a line segment positioned with offset from the edges
     for (let i = 0; i < 3; i++) {
-      // Calculate progressive scale for each border
-      // First border expands fastest, third border slowest
-      const borderScale = Math.max(0, Math.min(1, (animScale * 4) - i));
+      const offset = i * (baseBorderWidth + baseGutterSize);
       
-      // Calculate expanding size
-      const expandWidth = scaledWidth * borderScale;
-      const expandHeight = scaledHeight * borderScale;
-      
-      // Calculate base offset for this border (with gutters)
-      const baseOffset = i * (baseBorderWidth + baseGutterSize);
-      
-      // Position and size for this border
-      const borderX = x - baseOffset - (expandWidth - scaledWidth) / 2;
-      const borderY = y - baseOffset - (expandHeight - scaledHeight) / 2;
-      const borderWidth = scaledWidth + expandWidth;
-      const borderHeight = scaledHeight + expandHeight;
+      // Calculate border displacement using animation progress
+      // More subtle effect - masks through the width of each border
+      const animationOffset = animationProgress * canvasSize.width * 0.3;
       
       ctx.strokeStyle = borderColors[i];
       ctx.lineWidth = baseBorderWidth;
+      ctx.lineCap = 'butt';
       
-      // Only draw if border is starting to appear
-      if (borderScale > 0) {
-        ctx.strokeRect(
-          borderX,
-          borderY,
-          borderWidth,
-          borderHeight
-        );
+      // Draw the border segments with displacement
+      // Each border has a different offset position
+      
+      // Top border (extends right)
+      ctx.beginPath();
+      ctx.moveTo(x - offset - baseBorderWidth/2, y - offset - baseBorderWidth/2);
+      const topWidth = Math.min(
+        (scaledWidth + (offset + baseBorderWidth/2) * 2) * (animationProgress + 0.2),
+        scaledWidth + (offset + baseBorderWidth/2) * 2
+      );
+      ctx.lineTo(x - offset - baseBorderWidth/2 + topWidth, y - offset - baseBorderWidth/2);
+      ctx.stroke();
+      
+      // Right border (extends down)
+      const rightX = x + scaledWidth + offset + baseBorderWidth/2;
+      ctx.beginPath();
+      ctx.moveTo(rightX, y - offset - baseBorderWidth/2);
+      const rightHeight = Math.min(
+        (scaledHeight + (offset + baseBorderWidth/2) * 2) * (animationProgress + 0.1),
+        scaledHeight + (offset + baseBorderWidth/2) * 2
+      );
+      ctx.lineTo(rightX, y - offset - baseBorderWidth/2 + rightHeight);
+      ctx.stroke();
+      
+      // Bottom border (extends left)
+      const bottomY = y + scaledHeight + offset + baseBorderWidth/2;
+      ctx.beginPath();
+      ctx.moveTo(x + scaledWidth + offset + baseBorderWidth/2, bottomY);
+      const bottomWidth = Math.min(
+        (scaledWidth + (offset + baseBorderWidth/2) * 2) * (animationProgress),
+        scaledWidth + (offset + baseBorderWidth/2) * 2
+      );
+      ctx.lineTo(x + scaledWidth + offset + baseBorderWidth/2 - bottomWidth, bottomY);
+      ctx.stroke();
+      
+      // Left border (extends up)
+      ctx.beginPath();
+      ctx.moveTo(x - offset - baseBorderWidth/2, y + scaledHeight + offset + baseBorderWidth/2);
+      const leftHeight = Math.min(
+        (scaledHeight + (offset + baseBorderWidth/2) * 2) * (animationProgress - 0.1),
+        scaledHeight + (offset + baseBorderWidth/2) * 2
+      );
+      if (leftHeight > 0) {
+        ctx.lineTo(x - offset - baseBorderWidth/2, y + scaledHeight + offset + baseBorderWidth/2 - leftHeight);
       }
+      ctx.stroke();
     }
+    
+    // Draw the image on top
+    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
     
     return canvas;
   };
@@ -238,16 +259,19 @@ const ImageBorderEffect = () => {
   // Generate all animation frames
   const generateAnimationFrames = () => {
     const frames = [];
-    const totalFrames = 40; // Number of frames in the animation
+    const totalFrames = 60; // More frames for smoother animation
     
     for (let i = 0; i < totalFrames; i++) {
-      // Make animation progress from 0 to 1, then reverse back to 0
-      // This creates a nice expand and contract effect
-      const progress = i < totalFrames / 2 
-        ? i / (totalFrames / 2) 
-        : 2 - (i / (totalFrames / 2));
+      // Animation progresses from 0 to 1 with easing
+      const progress = i / totalFrames;
       
-      const frame = drawAnimationFrame(progress);
+      // Use easing function for smoother animation
+      // Starts slow, accelerates in the middle, ends slow
+      const eased = progress < 0.5
+        ? 2 * progress * progress
+        : -1 + (4 - 2 * progress) * progress;
+      
+      const frame = drawAnimationFrame(eased);
       frames.push(frame);
     }
     

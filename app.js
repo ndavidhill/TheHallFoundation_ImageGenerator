@@ -1,50 +1,257 @@
-// Import React hooks from the React object for standalone use
-const { useState, useRef, useEffect } = React;
+        <div className="p-3 border-t border-gray-100">
+          {/* Animation Progress Bar */}
+          {animationProgress > 0 && (
+            <div className="w-full h-1 bg-gray-200 mb-3 relative">
+              <div className="progress-bar absolute top-0 left-0 h-full" style={{ width: `${animationProgress}%` }}></div>
+            </div>
+          )}
+          
+          <div className="flex flex-wrap items-center gap-3 justify-between">
+            {/* Left Controls */}
+            <div className="flex items-center gap-3">
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              
+              {/* Upload Button */}
+              <button 
+                onClick={triggerFileInput}
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition uppercase tracking-wide"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Upload
+              </button>
+              
+              {/* Compact Controls Group */}
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Width</label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={borderWidth}
+                    onChange={(e) => setBorderWidth(parseInt(e.target.value))}
+                    className="w-20"
+                  />
+                </div>
+                
+                <div className="flex flex-col">
+                  <label className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Gap</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="20"
+                    value={gutterSize}
+                    onChange={(e) => setGutterSize(parseInt(e.target.value))}
+                    className="w-20"
+                  />
+                </div>
+              </div>
+              
+              {/* Color Display and Randomize Button */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5 pr-2 border-r border-gray-200">
+                  {borderColors.map((color, index) => (
+                    <div 
+                      key={index} 
+                      className={`w-7 h-7 rounded-full cursor-move transition-transform ${
+                        draggedIndex === index ? 'scale-110 shadow-sm border-gray-400' : 'border-gray-200'
+                      } ${
+                        dragOverIndex === index ? 'border-dashed border-gray-800' : ''
+                      }`}
+                      style={{ backgroundColor: color }}
+                      draggable
+                      onDragStart={() => handleDragStart(index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={handleDrop}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <div className="flex items-center justify-center h-full text-xs text-white opacity-60">
+                        {index + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <button
+                  onClick={randomizeColors}
+                  className="text-xs px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition flex items-center gap-1 uppercase tracking-wide"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Random
+                </button>
+              </div>
+            </div>
+            
+            {/* Animation and Download Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleAnimation}
+                disabled={!image}
+                className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition uppercase tracking-wide ${
+                  !image 
+                    ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : isAnimating
+                      ? 'border-gray-300 bg-gray-200 text-gray-700 hover:bg-gray-100'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isAnimating ? (
+                      // Create a single frame for the animation
+  const drawAnimationFrame = (offsetMultiplier) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+    const ctx = canvas.getContext('2d');
+    
+    // Clear canvas with transparent background
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (!image) return canvas;
+    
+    // Calculate border dimensions
+    const baseBorderWidth = borderWidth;
+    const baseGutterSize = gutterSize;
+    
+    // Calculate scale to fit image within canvas
+    const totalBorderWidth = 3 * baseBorderWidth + 2 * baseGutterSize;
+    const availableWidth = canvas.width - (totalBorderWidth * 2);
+    const availableHeight = canvas.height - (totalBorderWidth * 2);
+    
+    const scaleWidth = availableWidth / image.width;
+    const scaleHeight = availableHeight / image.height;
+    const scale = Math.min(scaleWidth, scaleHeight);
+    
+    // Calculate centered position
+    const scaledWidth = image.width * scale;
+    const scaledHeight = image.height * scale;
+    const x = (canvas.width - scaledWidth) / 2;
+    const y = (canvas.height - scaledHeight) / 2;
+    
+    // Draw the image
+    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+    
+    // Draw animated border rectangles
+    for (let i = 0; i < 3; i++) {
+      // Apply the animation offset
+      const animOffset = offsetMultiplier * (i + 1) * 5;
+      const offset = i * (baseBorderWidth + baseGutterSize) + animOffset;
+      
+      ctx.strokeStyle = borderColors[i];
+      ctx.lineWidth = baseBorderWidth;
+      
+      ctx.strokeRect(
+        x - offset - baseBorderWidth/2,
+        y - offset - baseBorderWidth/2,
+        scaledWidth + (offset + baseBorderWidth/2) * 2,
+        scaledHeight + (offset + baseBorderWidth/2) * 2
+      );
+    }
+    
+    return canvas;
+  };
 
-const ImageBorderEffect = () => {
-  const [image, setImage] = useState(null);
-  const [borderColors, setBorderColors] = useState(['#88A7FD', '#EFB646', '#749469']);
-  const [gutterSize, setGutterSize] = useState(8);
-  const [borderWidth, setBorderWidth] = useState(15);
-  const [draggedIndex, setDraggedIndex] = useState(null);
-  const [dragOverIndex, setDragOverIndex] = useState(null);
-  
-  // Color palette for randomization
-  const colorPalette = [
-    '#88A7FD', '#EFB646', '#749469', // Default colors
-    '#ABD7F6', '#4670DB', '#808CAC', '#FFE3CE', 
-    '#FF9483', '#BB6400', '#B38D7A', '#FFFB4E', 
-    '#756927', '#3A8266', '#5BE0A0', '#E7FFC6'
-  ];
-  const canvasRef = useRef(null);
-  const fileInputRef = useRef(null);
-  
-  // Fixed canvas dimensions
-  const canvasSize = { width: 800, height: 800 };
-  
-  // Handle image upload
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.match('image.*')) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          setImage(img);
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
+  // Generate all animation frames
+  const generateAnimationFrames = () => {
+    const frames = [];
+    const totalFrames = 30; // Number of frames in the animation
+    
+    for (let i = 0; i < totalFrames; i++) {
+      // Use a sine wave for smooth animation that starts and ends at 0
+      const offsetMultiplier = Math.sin((i / totalFrames) * Math.PI) * 10;
+      const frame = drawAnimationFrame(offsetMultiplier);
+      frames.push(frame);
+    }
+    
+    return frames;
+  };
+
+  // Start animation
+  const startAnimation = () => {
+    if (!image) return;
+    
+    setIsAnimating(true);
+    setAnimationProgress(0);
+    
+    // Generate all frames
+    const frames = generateAnimationFrames();
+    setAnimationFrames(frames);
+    
+    // Start animation loop
+    let frameIndex = 0;
+    const animateFrame = () => {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear and draw current frame
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(frames[frameIndex], 0, 0);
+      
+      // Update progress
+      setAnimationProgress((frameIndex / frames.length) * 100);
+      
+      // Increment frame index
+      frameIndex = (frameIndex + 1) % frames.length;
+      
+      // Continue animation
+      animationRef.current = requestAnimationFrame(animateFrame);
+    };
+    
+    // Start animation
+    animationRef.current = requestAnimationFrame(animateFrame);
+  };
+
+  // Stop animation
+  const stopAnimation = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    setIsAnimating(false);
+    
+    // Redraw the static version
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (image) {
+      // Redraw the static image with borders
+      updateCanvasWithImage();
     }
   };
-  
-  // Prompt file dialog when clicking the upload area
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
+
+  // Toggle animation
+  const toggleAnimation = () => {
+    if (isAnimating) {
+      stopAnimation();
+    } else {
+      startAnimation();
+    }
   };
-  
-  // Update canvas when image or border settings change
+
+  // Clean up animation on unmount
   useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  // Draw the static image with borders
+  const updateCanvasWithImage = () => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
@@ -92,7 +299,60 @@ const ImageBorderEffect = () => {
         scaledHeight + (offset + borderWidth/2) * 2
       );
     }
-  }, [image, borderColors, gutterSize, borderWidth, canvasSize]);
+  };// Import React hooks from the React object for standalone use
+const { useState, useRef, useEffect } = React;
+
+const ImageBorderEffect = () => {
+  const [image, setImage] = useState(null);
+  const [borderColors, setBorderColors] = useState(['#88A7FD', '#EFB646', '#749469']);
+  const [gutterSize, setGutterSize] = useState(8);
+  const [borderWidth, setBorderWidth] = useState(6);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationFrames, setAnimationFrames] = useState([]);
+  const [animationProgress, setAnimationProgress] = useState(0);
+  const animationRef = useRef(null);
+  
+  // Color palette for randomization
+  const colorPalette = [
+    '#88A7FD', '#EFB646', '#749469', // Default colors
+    '#ABD7F6', '#4670DB', '#808CAC', '#FFE3CE', 
+    '#FF9483', '#BB6400', '#B38D7A', '#FFFB4E', 
+    '#756927', '#3A8266', '#5BE0A0', '#E7FFC6'
+  ];
+  const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
+  
+  // Fixed canvas dimensions
+  const canvasSize = { width: 800, height: 800 };
+  
+  // Handle image upload
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.match('image.*')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          setImage(img);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  // Prompt file dialog when clicking the upload area
+  const triggerFileInput = () => {
+    fileInputRef.current.click();
+  };
+  
+  // Update canvas when image or border settings change
+  useEffect(() => {
+    if (isAnimating) return; // Don't update during animation
+    updateCanvasWithImage();
+  }, [image, borderColors, gutterSize, borderWidth]);
   
   // Handle drag start
   const handleDragStart = (index) => {
@@ -144,6 +404,48 @@ const ImageBorderEffect = () => {
       }
     }
     setBorderColors(newColors);
+  };
+
+  // Download animated GIF
+  const downloadGif = () => {
+    if (!image || animationFrames.length === 0) return;
+    
+    // Create GIF using gif.js
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      width: canvasSize.width,
+      height: canvasSize.height,
+      transparent: 0xFFFFFF, // White becomes transparent
+      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+    });
+    
+    // Add each frame to the GIF
+    animationFrames.forEach(frame => {
+      gif.addFrame(frame, { delay: 50, copy: true }); // 50ms delay between frames
+    });
+    
+    // Progress callback
+    gif.on('progress', progress => {
+      setAnimationProgress(progress * 100);
+    });
+    
+    // Finished callback
+    gif.on('finished', blob => {
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'animated-border.gif';
+      link.click();
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      setAnimationProgress(0);
+    });
+    
+    // Start rendering
+    gif.render();
   };
 
   // Download the result with transparency
@@ -297,24 +599,56 @@ const ImageBorderEffect = () => {
               </button>
             </div>
             
-            {/* Spacer */}
-            <div className="flex-grow"></div>
-            
-            {/* Download Button */}
-            <button
-              onClick={downloadImage}
-              disabled={!image}
-              className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded transition uppercase tracking-wide font-medium ${
-                image 
-                  ? 'bg-[#C1ABF6] text-black hover:bg-opacity-90' 
-                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Download
-            </button>
+            {/* Animation and Download Buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleAnimation}
+                disabled={!image}
+                className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded border transition uppercase tracking-wide ${
+                  !image 
+                    ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : isAnimating
+                      ? 'border-gray-300 bg-gray-200 text-gray-700 hover:bg-gray-100'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isAnimating ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 9v6m4-6v6M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  )}
+                </svg>
+                {isAnimating ? 'Stop' : 'Animate'}
+              </button>
+              
+              {isAnimating && (
+                <button
+                  onClick={downloadGif}
+                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition uppercase tracking-wide"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h18M3 16h18" />
+                  </svg>
+                  Save GIF
+                </button>
+              )}
+              
+              <button
+                onClick={downloadImage}
+                disabled={!image}
+                className={`flex items-center gap-1 text-xs px-3 py-1.5 rounded transition uppercase tracking-wide font-medium ${
+                  image 
+                    ? 'bg-[#C1ABF6] text-black hover:bg-opacity-90' 
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download PNG
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -189,41 +189,46 @@ const ImageBorderEffect = () => {
     const x = (canvas.width - scaledWidth) / 2;
     const y = (canvas.height - scaledHeight) / 2;
     
-    // Draw borders first (behind the image)
-    // Each border is offset from the center (following the reference image)
-    for (let i = 0; i < 3; i++) {
-      // Different offsets for each border to create the staggered frame effect
-      let offsetX, offsetY, borderWidth, borderHeight;
-      
-      // Calculate offsets based on border index
-      switch(i) {
-        case 0: // First border (centered)
-          offsetX = x - baseBorderWidth - baseGutterSize;
-          offsetY = y - baseBorderWidth - baseGutterSize;
-          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 2;
-          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 2;
-          break;
-        case 1: // Second border (shifted right and up)
-          offsetX = x;
-          offsetY = y - baseBorderWidth * 2 - baseGutterSize * 2;
-          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 2;
-          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 3;
-          break;
-        case 2: // Third border (shifted left and down)
-          offsetX = x - baseBorderWidth * 3 - baseGutterSize * 3;
-          offsetY = y;
-          borderWidth = scaledWidth + (baseBorderWidth + baseGutterSize) * 4;
-          borderHeight = scaledHeight + (baseBorderWidth + baseGutterSize) * 2;
-          break;
+    // Define the exact position and size of each border based on the reference image
+    const borderConfigs = [
+      // Inner border (blue in reference)
+      {
+        x: x - baseBorderWidth - baseGutterSize,
+        y: y - baseBorderWidth - baseGutterSize,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 2,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 2,
+        color: borderColors[2] // 3rd color (was blue in reference)
+      },
+      // Middle border (gold in reference)
+      {
+        x: x - baseBorderWidth * 2 - baseGutterSize * 2,
+        y: y - baseBorderWidth * 2 - baseGutterSize * 2,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 4,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 4,
+        color: borderColors[1] // 2nd color (was gold in reference)
+      },
+      // Outer border (green in reference)
+      {
+        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
+        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
+        color: borderColors[0] // 1st color (was green in reference)
       }
+    ];
+    
+    // Draw borders first (behind the image)
+    // Draw from outside to inside so inner borders overlay outer ones
+    for (let i = 2; i >= 0; i--) {
+      const config = borderConfigs[i];
       
       // Calculate animation progress for this border
       // Stagger the animations so they don't all appear at once
-      const borderProgress = Math.max(0, Math.min(1, animationProgress * 2.5 - (i * 0.3)));
+      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * (2-i))));
       
       // Only draw if this border has started animating
       if (borderProgress > 0) {
-        ctx.strokeStyle = borderColors[i];
+        ctx.strokeStyle = config.color;
         ctx.lineWidth = baseBorderWidth;
         
         // Set up clipping region for masking effect
@@ -245,7 +250,7 @@ const ImageBorderEffect = () => {
         ctx.clip();
         
         // Draw the rectangle border
-        ctx.strokeRect(offsetX, offsetY, borderWidth, borderHeight);
+        ctx.strokeRect(config.x, config.y, config.width, config.height);
         
         // Restore context
         ctx.restore();

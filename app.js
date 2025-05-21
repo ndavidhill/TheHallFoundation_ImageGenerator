@@ -90,21 +90,22 @@ const ImageBorderEffect = () => {
     const y = (canvas.height - scaledHeight) / 2;
     
     // Define border positions (must match animation)
+    // Start with inner border flush with image, then add consistent spacing
     const borderConfigs = [
-      // Outer border
+      // Outer border - 2 gaps and 2 borders out from the middle border
       {
-        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
-        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
         color: borderColors[0]
       },
-      // Middle border
+      // Middle border - 1 gap and 1 border out from inner border
       {
-        x: x - baseBorderWidth * 2 - baseGutterSize * 2,
-        y: y - baseBorderWidth * 2 - baseGutterSize * 2,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 4,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 4,
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
         color: borderColors[1]
       },
       // Inner border - flush with image
@@ -213,32 +214,32 @@ const ImageBorderEffect = () => {
     const x = (canvas.width - scaledWidth) / 2;
     const y = (canvas.height - scaledHeight) / 2;
     
-    // Define the exact position and size of each border based on the reference image
+    // Define the exact position and size of each border - consistent with static display
     // Note: Colors match the exact order in the static display (from outside to inside)
     const borderConfigs = [
-      // Outer border (green in reference)
+      // Outer border - 2 gaps and 2 borders out from the middle border
       {
-        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
-        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
-        color: borderColors[0] // 1st color (green in reference)
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
+        color: borderColors[0]
       },
-      // Middle border (gold in reference)
+      // Middle border - 1 gap and 1 border out from inner border
       {
-        x: x - baseBorderWidth * 2 - baseGutterSize * 2,
-        y: y - baseBorderWidth * 2 - baseGutterSize * 2,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 4,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 4,
-        color: borderColors[1] // 2nd color (gold in reference)
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
+        color: borderColors[1]
       },
-      // Inner border (blue in reference) - Now flush with image
+      // Inner border - flush with image
       {
         x: x - baseBorderWidth/2,
         y: y - baseBorderWidth/2,
         width: scaledWidth + baseBorderWidth,
         height: scaledHeight + baseBorderWidth,
-        color: borderColors[2] // 3rd color (blue in reference)
+        color: borderColors[2]
       }
     ];
     

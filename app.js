@@ -392,15 +392,14 @@ const ImageBorderEffect = () => {
     console.log("Creating GIF with", frames.length, "frames");
     
     try {
-      // Create GIF with vanilla approach instead of using the library directly
-      // This is to avoid potential issues with the GIF.js library
+      // Create GIF with inline worker URL to avoid cross-origin issues
       const gif = new window.GIF({
         workers: 2,
         quality: 10,
         width: canvasSize.width,
         height: canvasSize.height,
         transparent: 0xFFFFFF, // White becomes transparent
-        workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+        workerScript: window.gifWorkerURL // Use the Blob URL created in the HTML
       });
       
       console.log("GIF object created", gif);

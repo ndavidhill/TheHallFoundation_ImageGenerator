@@ -371,74 +371,229 @@ const ImageBorderEffect = () => {
     };
   }, []);
 
-  // Download animated GIF
+  // Download animated GIF using a simpler approach
   const downloadGif = () => {
-    if (!image || animationFrames.length === 0) {
-      // Generate frames if they don't exist yet
-      const frames = generateAnimationFrames();
-      setAnimationFrames(frames);
-      
-      // Use a slight delay to ensure frames are ready
-      setTimeout(() => {
-        createAndDownloadGif(frames);
-      }, 100);
-    } else {
-      createAndDownloadGif(animationFrames);
+    if (!image) {
+      alert("Please upload an image first!");
+      return;
     }
+    
+    // Show that processing has started
+    setAnimationProgress(5);
+    
+    // Generate animation frames
+    const totalFrames = 20; // Fewer frames for better performance
+    const frames = [];
+    
+    // Create frame elements
+    for (let i = 0; i < totalFrames; i++) {
+      // Calculate progress from 0 to 1 for animation
+      const progress = i / totalFrames;
+      
+      // Draw frame
+      const canvas = document.createElement('canvas');
+      canvas.width = canvasSize.width;
+      canvas.height = canvasSize.height;
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw borders and image for this frame
+      drawFrameContents(ctx, progress);
+      
+      // Add to frames array
+      frames.push(canvas.toDataURL('image/png'));
+      
+      // Update progress
+      setAnimationProgress(5 + (25 * i / totalFrames));
+    }
+    
+    // Create animated GIF using canvas data URLs
+    createGifManually(frames);
   };
   
-  // Helper function to create and download the GIF
-  const createAndDownloadGif = (frames) => {
-    console.log("Creating GIF with", frames.length, "frames");
+  // Draw the contents of a single frame
+  const drawFrameContents = (ctx, animationProgress) => {
+    if (!image) return;
     
-    try {
-      // Create GIF with inline worker URL to avoid cross-origin issues
-      const gif = new window.GIF({
-        workers: 2,
+    // Calculate border dimensions
+    const baseBorderWidth = borderWidth;
+    const baseGutterSize = gutterSize;
+    
+    // Calculate scale to fit image within canvas
+    const totalBorderWidth = 3 * baseBorderWidth + 2 * baseGutterSize;
+    const availableWidth = canvasSize.width - (totalBorderWidth * 2);
+    const availableHeight = canvasSize.height - (totalBorderWidth * 2);
+    
+    const scaleWidth = availableWidth / image.width;
+    const scaleHeight = availableHeight / image.height;
+    const scale = Math.min(scaleWidth, scaleHeight);
+    
+    // Calculate centered position
+    const scaledWidth = image.width * scale;
+    const scaledHeight = image.height * scale;
+    const x = (canvasSize.width - scaledWidth) / 2;
+    const y = (canvasSize.height - scaledHeight) / 2;
+    
+    // Define the exact position and size of each border - consistent with static display
+    const borderConfigs = [
+      // Outer border - 2 gaps and 2 borders out from the middle border
+      {
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2 + (baseGutterSize + baseBorderWidth) * 2,
+        color: borderColors[0]
+      },
+      // Middle border - 1 gap and 1 border out from inner border
+      {
+        x: x - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        y: y - baseBorderWidth/2 - baseGutterSize - baseBorderWidth,
+        width: scaledWidth + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
+        height: scaledHeight + baseBorderWidth + (baseGutterSize + baseBorderWidth) * 2,
+        color: borderColors[1]
+      },
+      // Inner border - flush with image
+      {
+        x: x - baseBorderWidth/2,
+        y: y - baseBorderWidth/2,
+        width: scaledWidth + baseBorderWidth,
+        height: scaledHeight + baseBorderWidth,
+        color: borderColors[2]
+      }
+    ];
+    
+    // Draw borders first (behind the image)
+    // Draw from inside to outside
+    for (let i = 2; i >= 0; i--) {
+      const config = borderConfigs[i];
+      
+      // Calculate animation progress for this border
+      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * (2-i))));
+      
+      // Only draw if this border has started animating
+      if (borderProgress > 0) {
+        ctx.strokeStyle = config.color;
+        ctx.lineWidth = baseBorderWidth;
+        
+        // Set up clipping region for masking effect
+        ctx.save();
+        
+        // Create a mask that grows outward from the center as a square
+        const maskSize = borderProgress * Math.max(canvasSize.width, canvasSize.height);
+        const centerX = canvasSize.width / 2;
+        const centerY = canvasSize.height / 2;
+        
+        // Create a square clipping mask from the center
+        ctx.beginPath();
+        ctx.rect(
+          centerX - maskSize, 
+          centerY - maskSize, 
+          maskSize * 2, 
+          maskSize * 2
+        );
+        ctx.clip();
+        
+        // Draw the rectangle border
+        ctx.strokeRect(config.x, config.y, config.width, config.height);
+        
+        // Restore context
+        ctx.restore();
+      }
+    }
+    
+    // Draw the image on top
+    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+  };
+  
+  // Create GIF manually without relying on the GIF.js library
+  const createGifManually = (frames) => {
+    // Show that we're creating the download
+    setAnimationProgress(30);
+    
+    // Create a new canvas where we'll compose the final GIF frames
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasSize.width;
+    canvas.height = canvasSize.height;
+    const ctx = canvas.getContext('2d');
+    
+    // Set the white color to be transparent
+    ctx.fillStyle = 'white';
+    ctx.globalCompositeOperation = 'destination-out';
+    
+    // Create an animated GIF using frames
+    import('gifjs').then(GIFModule => {
+      const GIF = GIFModule.default;
+      const gif = new GIF({
+        workers: 1, // Reduce workers to avoid issues
         quality: 10,
         width: canvasSize.width,
         height: canvasSize.height,
-        transparent: 0xFFFFFF, // White becomes transparent
-        workerScript: window.gifWorkerURL // Use the Blob URL created in the HTML
+        transparent: 'white',
+        background: 'transparent'
       });
       
-      console.log("GIF object created", gif);
+      // Add frames
+      let frameCount = 0;
+      const totalFrames = frames.length;
       
-      // Add each frame to the GIF
-      frames.forEach((frame, index) => {
-        console.log(`Adding frame ${index+1}/${frames.length}`);
-        gif.addFrame(frame, { delay: 100, copy: true }); // 100ms delay between frames
-      });
+      const addNextFrame = () => {
+        if (frameCount >= totalFrames) {
+          // All frames added, render GIF
+          setAnimationProgress(80);
+          gif.render();
+          return;
+        }
+        
+        // Create an image from the data URL
+        const img = new Image();
+        img.onload = () => {
+          // Clear canvas
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw image
+          ctx.drawImage(img, 0, 0);
+          
+          // Add frame to GIF
+          gif.addFrame(canvas, { delay: 100, copy: true });
+          
+          // Update progress
+          frameCount++;
+          setAnimationProgress(30 + Math.floor(50 * frameCount / totalFrames));
+          
+          // Process next frame
+          setTimeout(addNextFrame, 10);
+        };
+        img.src = frames[frameCount];
+      };
       
-      // Progress callback
-      gif.on('progress', progress => {
-        console.log(`GIF progress: ${Math.round(progress * 100)}%`);
-        setAnimationProgress(progress * 100);
-      });
+      // Start adding frames
+      addNextFrame();
       
-      // Finished callback
-      gif.on('finished', blob => {
-        console.log("GIF finished, size:", Math.round(blob.size / 1024), "KB");
-        // Create download link
+      // Handle GIF creation finishing
+      gif.on('finished', function(blob) {
+        // Download
         const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'animated-border.gif';
-        link.click();
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'animated-border.gif';
+        a.click();
         
         // Clean up
         URL.revokeObjectURL(url);
         setAnimationProgress(0);
       });
-      
-      console.log("Starting GIF render...");
-      // Start rendering
-      gif.render();
-    } catch (error) {
-      console.error("Error creating GIF:", error);
-      alert("There was an error creating the GIF. Check the console for details.");
+    }).catch(error => {
+      console.error("Error with GIF creation:", error);
+      // Fallback: just download a single PNG
+      const link = document.createElement('a');
+      link.download = 'border-image.png';
+      link.href = canvasRef.current.toDataURL('image/png');
+      link.click();
       setAnimationProgress(0);
-    }
+    });
   };
 
   // Download the result with transparency

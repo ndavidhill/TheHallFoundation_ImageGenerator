@@ -48,8 +48,15 @@ const ImageBorderEffect = () => {
     fileInputRef.current.click();
   };
   
-  // Draw the static image with borders
+  // Draw the static image with borders (no longer used directly - replaced by useEffect)
   const updateCanvasWithImage = () => {
+    // This function is now handled by the useEffect
+  };
+  
+  // Update canvas when image or border settings change
+  useEffect(() => {
+    if (isAnimating) return; // Don't update during animation
+    
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
@@ -64,10 +71,11 @@ const ImageBorderEffect = () => {
     if (!image) return;
     
     // Calculate border dimensions
-    const totalBorderWidth = 3 * borderWidth + 2 * gutterSize;
+    const baseBorderWidth = borderWidth;
+    const baseGutterSize = gutterSize;
     
-    // Calculate scale to fit image within canvas while maintaining aspect ratio
-    // Leave space for borders
+    // Calculate scale to fit image within canvas
+    const totalBorderWidth = 3 * baseBorderWidth + 2 * baseGutterSize;
     const availableWidth = canvas.width - (totalBorderWidth * 2);
     const availableHeight = canvas.height - (totalBorderWidth * 2);
     
@@ -81,29 +89,45 @@ const ImageBorderEffect = () => {
     const x = (canvas.width - scaledWidth) / 2;
     const y = (canvas.height - scaledHeight) / 2;
     
-    // Draw the image
-    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+    // Define border positions (must match animation)
+    const borderConfigs = [
+      // Outer border
+      {
+        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
+        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
+        color: borderColors[0]
+      },
+      // Middle border
+      {
+        x: x - baseBorderWidth * 2 - baseGutterSize * 2,
+        y: y - baseBorderWidth * 2 - baseGutterSize * 2,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 4,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 4,
+        color: borderColors[1]
+      },
+      // Inner border - flush with image
+      {
+        x: x - baseBorderWidth/2,
+        y: y - baseBorderWidth/2,
+        width: scaledWidth + baseBorderWidth,
+        height: scaledHeight + baseBorderWidth,
+        color: borderColors[2]
+      }
+    ];
     
-    // Draw border rectangles
+    // Draw borders first (same order as in animation)
     for (let i = 0; i < 3; i++) {
-      const offset = i * (borderWidth + gutterSize);
-      ctx.strokeStyle = borderColors[i];
-      ctx.lineWidth = borderWidth;
-      
-      ctx.strokeRect(
-        x - offset - borderWidth/2,
-        y - offset - borderWidth/2,
-        scaledWidth + (offset + borderWidth/2) * 2,
-        scaledHeight + (offset + borderWidth/2) * 2
-      );
+      const config = borderConfigs[i];
+      ctx.strokeStyle = config.color;
+      ctx.lineWidth = baseBorderWidth;
+      ctx.strokeRect(config.x, config.y, config.width, config.height);
     }
-  };
-  
-  // Update canvas when image or border settings change
-  useEffect(() => {
-    if (isAnimating) return; // Don't update during animation
-    updateCanvasWithImage();
-  }, [image, borderColors, gutterSize, borderWidth, isAnimating]);
+    
+    // Draw the image on top
+    ctx.drawImage(image, x, y, scaledWidth, scaledHeight);
+  }, [image, borderColors, gutterSize, borderWidth, isAnimating, canvasSize]);
   
   // Handle drag start
   const handleDragStart = (index) => {
@@ -190,14 +214,15 @@ const ImageBorderEffect = () => {
     const y = (canvas.height - scaledHeight) / 2;
     
     // Define the exact position and size of each border based on the reference image
+    // Note: Colors match the exact order in the static display (from outside to inside)
     const borderConfigs = [
-      // Inner border (blue in reference)
+      // Outer border (green in reference)
       {
-        x: x - baseBorderWidth - baseGutterSize,
-        y: y - baseBorderWidth - baseGutterSize,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 2,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 2,
-        color: borderColors[2] // 3rd color (was blue in reference)
+        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
+        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
+        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
+        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
+        color: borderColors[0] // 1st color (green in reference)
       },
       // Middle border (gold in reference)
       {
@@ -205,26 +230,26 @@ const ImageBorderEffect = () => {
         y: y - baseBorderWidth * 2 - baseGutterSize * 2,
         width: scaledWidth + (baseBorderWidth + baseGutterSize) * 4,
         height: scaledHeight + (baseBorderWidth + baseGutterSize) * 4,
-        color: borderColors[1] // 2nd color (was gold in reference)
+        color: borderColors[1] // 2nd color (gold in reference)
       },
-      // Outer border (green in reference)
+      // Inner border (blue in reference) - Now flush with image
       {
-        x: x - baseBorderWidth * 3 - baseGutterSize * 3,
-        y: y - baseBorderWidth * 3 - baseGutterSize * 3,
-        width: scaledWidth + (baseBorderWidth + baseGutterSize) * 6,
-        height: scaledHeight + (baseBorderWidth + baseGutterSize) * 6,
-        color: borderColors[0] // 1st color (was green in reference)
+        x: x - baseBorderWidth/2,
+        y: y - baseBorderWidth/2,
+        width: scaledWidth + baseBorderWidth,
+        height: scaledHeight + baseBorderWidth,
+        color: borderColors[2] // 3rd color (blue in reference)
       }
     ];
     
     // Draw borders first (behind the image)
-    // Draw from inside to outside
-    for (let i = 0; i < 3; i++) {
+    // Draw from inside to outside (2→1→0)
+    for (let i = 2; i >= 0; i--) {
       const config = borderConfigs[i];
       
       // Calculate animation progress for this border
-      // Inner border appears first, then middle, then outer
-      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * i)));
+      // Inner border (i=2) appears first, then middle (i=1), then outer (i=0)
+      const borderProgress = Math.max(0, Math.min(1, animationProgress * 1.5 - (0.2 * (2-i))));
       
       // Only draw if this border has started animating
       if (borderProgress > 0) {

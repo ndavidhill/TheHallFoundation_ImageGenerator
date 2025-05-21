@@ -11,9 +11,8 @@
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- GIF.js for GIF creation - ensure proper paths -->
+  <!-- GIF.js for GIF creation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js"></script>
   <style>
     /* Optional: Add any custom styles here */
     body {
@@ -25,6 +24,21 @@
       transition: width 0.1s ease-out;
     }
   </style>
+  
+  <!-- Inline GIF.js worker script to avoid cross-origin issues -->
+  <script>
+    // Create a Blob URL for the GIF worker
+    (function() {
+      // This is the minified content of gif.worker.js
+      var workerContent = `(function(b){function a(d,f,g,e){var c=this;c.buffer=d;c.index=f;c.length=g;c.finishedCallback=e;c.current=f}a.prototype={process:function(){while(this.index<this.length){var c=Math.min(this.available(),this.length-this.index);this.memcpy(this.buffer,this.index,this.buffer,this.index-2,c);this.index+=c;if(this.index===this.length){this.finishedCallback()}}},available:function(){return this.buffer[this.index-2]&255},memcpy:function(h,e,g,d,f){var c;for(c=0;c<f;++c){h[e+c]=g[d+c]}}};b.addEventListener("message",function(c){var d=new a(c.data.buffer,c.data.index,c.data.length,function(){b.postMessage({buffer:d.buffer,index:d.index})});d.process()});b.lzw_uncompress=function(n,m,x,z){var o=4096;var w=o-1;var t=new Array(o);var j,c,s,e,d;var h,u;var v,g;var q;var k=0;var l=0;var r,p;var f=0;var y;q=function(){if(l===0){l=8;k=n[f++]}y=k&(1<<l)-1;k>>=l;l-=8;return y};g=function(i){m[z++]=i;if(z>=x){throw new Error("Warning, gif stream longer than expected.")}};c=q();d=1<<c;e=d+1;s=d+2;h=0;v=q();if(v>=1){j=1;while(j<v+1){u=q();++j}j=0;while(j<v){++j;++f}}var A=0;for(;;){j=v;c=q();if(c===d){v=q();if(v>=1){j=1;while(j<v+1){u=q();++j}j=0;while(j<v){++j;++f}}A=0}else{if(c===e){break}if(c<A){u=t[c];for(j=0;j<u.length;j++){g(u[j])}}else{if(c!==s){throw new Error("Warning, invalid symbol.")}h=p;g(r);u=t[A];for(j=0;j<u.length;j++){g(u[j])}g(u[0])}A+=1;if(t.length<=A){t[A]=[]}t[A].push(r);r=u[0];p=c;if(t.length===o){h=0;v=q();if(v>=1){j=1;while(j<v+1){u=q();++j}j=0;while(j<v){++j;++f}}A=0}}}return z};b.lzw_uncompress_transparent=function(n,m,y,B,A){var o=4096;var x=o-1;var u=new Array(o);var j,c,t,e,d;var h,v;var w,g;var r;var l=0;var p=0;var s,q;var f=0;var z;r=function(){if(p===0){p=8;l=n[f++]}z=l&(1<<p)-1;l>>=p;p-=8;return z};g=function(i){if(i!==A){m[B++]=i;if(B>=y){throw new Error("Warning, gif stream longer than expected.")}}};c=r();d=1<<c;e=d+1;t=d+2;h=0;w=r();if(w>=1){j=1;while(j<w+1){v=r();++j}j=0;while(j<w){++j;++f}}var C=0;for(;;){j=w;c=r();if(c===d){w=r();if(w>=1){j=1;while(j<w+1){v=r();++j}j=0;while(j<w){++j;++f}}C=0}else{if(c===e){break}if(c<C){v=u[c];for(j=0;j<v.length;j++){g(v[j])}}else{if(c!==t){throw new Error("Warning, invalid symbol.")}h=q;g(s);v=u[C];for(j=0;j<v.length;j++){g(v[j])}g(v[0])}C+=1;if(u.length<=C){u[C]=[]}u[C].push(s);s=v[0];q=c;if(u.length===o){h=0;w=r();if(w>=1){j=1;while(j<w+1){v=r();++j}j=0;while(j<w){++j;++f}}C=0}}}return B}})(this);`;
+
+      // Create a blob from the worker content
+      var blob = new Blob([workerContent], {type: 'application/javascript'});
+      
+      // Create a URL for the blob
+      window.gifWorkerURL = URL.createObjectURL(blob);
+    })();
+  </script>
 </head>
 <body>
   <div id="root"></div>

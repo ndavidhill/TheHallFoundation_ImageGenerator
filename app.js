@@ -373,44 +373,73 @@ const ImageBorderEffect = () => {
 
   // Download animated GIF
   const downloadGif = () => {
-    if (!image || animationFrames.length === 0) return;
-    
-    // Create GIF using gif.js
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      width: canvasSize.width,
-      height: canvasSize.height,
-      transparent: 0xFFFFFF, // White becomes transparent
-      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
-    });
-    
-    // Add each frame to the GIF
-    animationFrames.forEach(frame => {
-      gif.addFrame(frame, { delay: 50, copy: true }); // 50ms delay between frames
-    });
-    
-    // Progress callback
-    gif.on('progress', progress => {
-      setAnimationProgress(progress * 100);
-    });
-    
-    // Finished callback
-    gif.on('finished', blob => {
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'animated-border.gif';
-      link.click();
+    if (!image || animationFrames.length === 0) {
+      // Generate frames if they don't exist yet
+      const frames = generateAnimationFrames();
+      setAnimationFrames(frames);
       
-      // Clean up
-      URL.revokeObjectURL(url);
-      setAnimationProgress(0);
-    });
+      // Use a slight delay to ensure frames are ready
+      setTimeout(() => {
+        createAndDownloadGif(frames);
+      }, 100);
+    } else {
+      createAndDownloadGif(animationFrames);
+    }
+  };
+  
+  // Helper function to create and download the GIF
+  const createAndDownloadGif = (frames) => {
+    console.log("Creating GIF with", frames.length, "frames");
     
-    // Start rendering
-    gif.render();
+    try {
+      // Create GIF with vanilla approach instead of using the library directly
+      // This is to avoid potential issues with the GIF.js library
+      const gif = new window.GIF({
+        workers: 2,
+        quality: 10,
+        width: canvasSize.width,
+        height: canvasSize.height,
+        transparent: 0xFFFFFF, // White becomes transparent
+        workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+      });
+      
+      console.log("GIF object created", gif);
+      
+      // Add each frame to the GIF
+      frames.forEach((frame, index) => {
+        console.log(`Adding frame ${index+1}/${frames.length}`);
+        gif.addFrame(frame, { delay: 100, copy: true }); // 100ms delay between frames
+      });
+      
+      // Progress callback
+      gif.on('progress', progress => {
+        console.log(`GIF progress: ${Math.round(progress * 100)}%`);
+        setAnimationProgress(progress * 100);
+      });
+      
+      // Finished callback
+      gif.on('finished', blob => {
+        console.log("GIF finished, size:", Math.round(blob.size / 1024), "KB");
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'animated-border.gif';
+        link.click();
+        
+        // Clean up
+        URL.revokeObjectURL(url);
+        setAnimationProgress(0);
+      });
+      
+      console.log("Starting GIF render...");
+      // Start rendering
+      gif.render();
+    } catch (error) {
+      console.error("Error creating GIF:", error);
+      alert("There was an error creating the GIF. Check the console for details.");
+      setAnimationProgress(0);
+    }
   };
 
   // Download the result with transparency

@@ -4,8 +4,8 @@ const { useState, useRef, useEffect } = React;
 const ImageBorderEffect = () => {
   const [image, setImage] = useState(null);
   const [borderColors, setBorderColors] = useState(['#88A7FD', '#EFB646', '#749469']);
-  const [gutterSize, setGutterSize] = useState(8);
-  const [borderWidth, setBorderWidth] = useState(15);
+  const [gutterSize, setGutterSize] = useState(0); // Set to 0 by default, hidden from UI
+  const [borderWidth, setBorderWidth] = useState(6);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -48,11 +48,6 @@ const ImageBorderEffect = () => {
     fileInputRef.current.click();
   };
   
-  // Draw the static image with borders (no longer used directly - replaced by useEffect)
-  const updateCanvasWithImage = () => {
-    // This function is now handled by the useEffect
-  };
-  
   // Update canvas when image or border settings change
   useEffect(() => {
     if (isAnimating) return; // Don't update during animation
@@ -90,7 +85,6 @@ const ImageBorderEffect = () => {
     const y = (canvas.height - scaledHeight) / 2;
     
     // Define border positions (must match animation)
-    // Start with inner border flush with image, then add consistent spacing
     const borderConfigs = [
       // Outer border - 2 gaps and 2 borders out from the middle border
       {
@@ -350,7 +344,15 @@ const ImageBorderEffect = () => {
     setIsAnimating(false);
     
     // Redraw the static version
-    updateCanvasWithImage();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    if (image) {
+      // Trigger the useEffect to redraw static image
+      setAnimationProgress(0);
+    }
   };
 
   // Toggle animation
@@ -370,48 +372,6 @@ const ImageBorderEffect = () => {
       }
     };
   }, []);
-
-  // Download animated GIF
-  const downloadGif = () => {
-    if (!image || animationFrames.length === 0) return;
-    
-    // Create GIF using gif.js
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      width: canvasSize.width,
-      height: canvasSize.height,
-      transparent: 0xFFFFFF, // White becomes transparent
-      workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
-    });
-    
-    // Add each frame to the GIF
-    animationFrames.forEach(frame => {
-      gif.addFrame(frame, { delay: 50, copy: true }); // 50ms delay between frames
-    });
-    
-    // Progress callback
-    gif.on('progress', progress => {
-      setAnimationProgress(progress * 100);
-    });
-    
-    // Finished callback
-    gif.on('finished', blob => {
-      // Create download link
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'animated-border.gif';
-      link.click();
-      
-      // Clean up
-      URL.revokeObjectURL(url);
-      setAnimationProgress(0);
-    });
-    
-    // Start rendering
-    gif.render();
-  };
 
   // Download the result with transparency
   const downloadImage = () => {
@@ -510,7 +470,7 @@ const ImageBorderEffect = () => {
                 Upload
               </button>
               
-              {/* Compact Controls Group */}
+              {/* Compact Controls Group - Gap slider hidden */}
               <div className="flex items-center gap-3">
                 <div className="flex flex-col">
                   <label className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Width</label>
@@ -524,6 +484,8 @@ const ImageBorderEffect = () => {
                   />
                 </div>
                 
+                {/* Gap slider is commented out but functionality remains */}
+                {/* 
                 <div className="flex flex-col">
                   <label className="text-xs text-gray-500 mb-1 uppercase tracking-wide">Gap</label>
                   <input
@@ -535,6 +497,7 @@ const ImageBorderEffect = () => {
                     className="w-20"
                   />
                 </div>
+                */}
               </div>
               
               {/* Color Display and Randomize Button */}
@@ -596,18 +559,6 @@ const ImageBorderEffect = () => {
                 </svg>
                 {isAnimating ? 'Stop' : 'Animate'}
               </button>
-              
-              {isAnimating && (
-                <button
-                  onClick={downloadGif}
-                  className="flex items-center gap-1 text-xs px-3 py-1.5 rounded border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition uppercase tracking-wide"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 4v16M17 4v16M3 8h18M3 16h18" />
-                  </svg>
-                  Save GIF
-                </button>
-              )}
               
               <button
                 onClick={downloadImage}

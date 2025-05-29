@@ -5,7 +5,7 @@ const ImageBorderEffect = () => {
   const [image, setImage] = useState(null);
   const [borderColors, setBorderColors] = useState(['#88A7FD', '#EFB646', '#749469']);
   const [gutterSize, setGutterSize] = useState(0); // Set to 0 by default, hidden from UI
-  const [borderWidth, setBorderWidth] = useState(6);
+  const [borderWidth, setBorderWidth] = useState(15);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [isAnimating, setIsAnimating] = useState(false);
